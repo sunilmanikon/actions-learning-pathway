@@ -2,24 +2,19 @@ name: hello-world
 on: [push]
 jobs:
   build:
+    # All public repositories run on Github-hosted servers for free
     runs-on: ubuntu-latest
+#    runs-on:
+#      - self-hosted
     steps:
       - name: Checkout repository code
         uses: actions/checkout@v4
       - name: Use node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '22.x'
+          node-version: '22'
+          cache: 'npm'
       - run: npm install
         uses: actions/cache@v4
-        with:
-          # To improve build performance, Next.js saves a cache to .next/cache that is shared between builds.
-          path: |
-            ~/.npm
-            ${{ github.workspace }}/.next/cache
-          # Generate a new cache whenever packages or source files change.
-          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx') }}
-          # If source files changed but packages didn't, rebuild from a prior cache.
-          restore-keys: |
-            ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
+
       - run: npm run build
