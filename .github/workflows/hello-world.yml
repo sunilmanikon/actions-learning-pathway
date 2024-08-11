@@ -4,6 +4,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - name: Hello world
-      run: echo "$("cat hello-world.txt")"
+      - name: Checkout repository code
+        uses: actions/checkout@v3
+      - run: echo "$("cat hello-world.txt")"
