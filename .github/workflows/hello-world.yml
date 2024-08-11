@@ -5,5 +5,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository code
-        uses: actions/checkout@v3
-      - run: echo "$("cat hello-world.txt")"
+        uses: actions/checkout@v4
+      - name: Use node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '22.x'
+      - run: npm install
+      - run: npm run build
