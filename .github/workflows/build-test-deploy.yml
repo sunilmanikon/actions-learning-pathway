@@ -1,0 +1,129 @@
+name: hello-world
+on: [push]
+jobs:
+  build:
+    # All public repositories run on Github-hosted servers for free
+    runs-on: ubuntu-latest
+    #    runs-on:
+    #      - self-hosted
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+
+      - name: Use node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+
+      - name: Cache dependencies
+        # To improve build performance, Next.js saves a cache to .next/cache that is shared between builds.
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            ${{ github.workspace }}/.next/cache
+          # Generate a new cache whenever packages or source files change.
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx') }}
+          # If source files changed but packages didn't, rebuild from a prior cache.
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run build
+        run: npm run build
+
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      # We need to repeat some of the same build job steps again because jobs are completely independent and their steps are scoped locally
+      # But this also gives us the option to choose a different runner or different version of any component
+      - name: checkout repo
+        uses: actions/checkout@v4
+
+      - name: use node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+
+      - name: Cache dependencies
+        # To improve build performance, Next.js saves a cache to .next/cache that is shared between builds.
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            ${{ github.workspace }}/.next/cache
+          # Generate a new cache whenever packages or source files change.
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx') }}
+          # If source files changed but packages didn't, rebuild from a prior cache.
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: npm test
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: test
+    permissions:
+      # workflow permissions required to interact with github repo
+      # token is like the key for the workflow to interact with github repo.  It needs to be given 'write' access
+      contents: write
+      pages: write
+      id-token: write
+    environment:
+      name: production
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      # The workflow needs to authenticate with github to gain the permissions defined above
+      - name: checkout repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: use node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+
+      - name: configure github pages
+        uses: actions/configure-pages@v3
+        with:
+          static_site_generator: next
+
+      - name: Cache dependencies
+        # To improve build performance, Next.js saves a cache to .next/cache that is shared between builds.
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            ${{ github.workspace }}/.next/cache
+          # Generate a new cache whenever packages or source files change.
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx') }}
+          # If source files changed but packages didn't, rebuild from a prior cache.
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run build
+        run: npm run build
+
+      - name: upload artifacts
+        # artifact is a package or a set of files, resulting from a build process, that are meants for distribution or deployment
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: "./out"
+
+      - name: deploy
+        id: deployment
+        uses: actions/deploy-pages@v1
+
